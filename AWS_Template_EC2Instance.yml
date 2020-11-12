@@ -1,0 +1,13 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  EC2InstanceProd:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: eu-central-1a
+      ImageId: ami-00a205cb8e06c3c4e
+      InstanceType: t2.micro
+      KeyName: test_kp
+      SubnetId: subnet-aec83ce2
+      PrivateIpAddress: 172.31.0.100/20
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: "true"

@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  Ec2Instance: 
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: ami-00a205cb8e06c3c4e
+      KeyName: test_kp
+      InstanceType: t2.micro
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          # GroupSet: 
+          #   - Ref: "myVPCEC2SecurityGroup"
+          SubnetId: subnet-aec83ce2

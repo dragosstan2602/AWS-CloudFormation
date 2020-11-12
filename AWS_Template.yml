@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  VPCProd:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.1.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: VPC-Prod
+
+  SubnetProd:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: eu-central-1a
+      CidrBlock: 10.1.1.0/24
+      VpcId: !Ref VPCProd
+      Tags:
+        - Key: Name
+          Value: Subnet-Prod 
+    DependsOn: VPCProd
+
+  VPCSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to client host
+      Tags:
+        - Key: Name
+          Value: VPCSecGroup
+      VpcId:
+        Ref: VPCProd
+      DependsOn: VPCProd
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 86.49.242.211/32
+          Description: SSH from home
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 86.49.242.211/32
+          Description: Ping from home 
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+    myInternetGateway:
+      Type: AWS::EC2::InternetGateway
+      Properties:
+        Tags:
+        - Key: Name
+          Value: IGW_Prod_VPC
