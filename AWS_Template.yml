@@ -1,0 +1,168 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.1.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: MyVPC
+
+  SubnetPubProd:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: eu-central-1a
+      CidrBlock: 10.1.1.0/24
+      VpcId: !Ref MyVPC
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Subnet-Pub-Prod 
+    DependsOn: MyVPC
+
+  SubnetPubDev:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: eu-central-1b
+      CidrBlock: 10.1.2.0/24
+      VpcId: !Ref MyVPC
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Subnet-Pub-Dev 
+    DependsOn: MyVPC
+
+  SubnetPrivProd:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: eu-central-1a
+      CidrBlock: 10.1.101.0/24
+      VpcId: !Ref MyVPC
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: Subnet-Priv-Prod 
+    DependsOn: MyVPC
+
+  SubnetPrivDev:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: eu-central-1b
+      CidrBlock: 10.1.102.0/24
+      VpcId: !Ref MyVPC
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: Subnet-Priv-Dev 
+    DependsOn: MyVPC
+
+  VPCSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH/ICMP to MyVPC
+      Tags:
+        - Key: Name
+          Value: VPCSecGroup
+      VpcId:
+        Ref: MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 86.49.242.211/32
+          Description: SSH from home
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 86.49.242.211/32
+          Description: Ping from home
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 10.0.0.0/8
+          Description: Ping from 10.0.0.0/8
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 10.0.0.0/8
+          Description: SSH from 10.0.0.0/8 
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  myInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: IGW_MyVPC
+  
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+         Ref: MyVPC
+      InternetGatewayId:
+         Ref: myInternetGateway
+
+  RTPublic:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      Tags: 
+      - Key: Name
+        Value: RT_Public
+      VpcId:
+        Ref: MyVPC
+
+  SubnetPubProdRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: SubnetPubProd
+      RouteTableId:
+        Ref: RTPublic
+
+  SubnetPubDevRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: SubnetPubDev
+      RouteTableId:
+        Ref: RTPublic
+  
+  RTPrivate:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      Tags: 
+      - Key: Name
+        Value: RT_Private
+      VpcId:
+        Ref: MyVPC
+
+  SubnetPrivProdRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: SubnetPrivProd
+      RouteTableId:
+        Ref: RTPrivate
+
+  SubnetPrivDevRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: SubnetPrivDev
+      RouteTableId:
+        Ref: RTPrivate
+
+  myRoute:
+    Type: AWS::EC2::Route
+    DependsOn: myInternetGateway
+    Properties:
+       RouteTableId:
+         Ref: RTPublic
+       DestinationCidrBlock: 0.0.0.0/0
+       GatewayId:
+         Ref: myInternetGateway
